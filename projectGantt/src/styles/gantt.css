@@ -1,0 +1,77 @@
+/* src/styles/gantt.css */
+.gantt-container {
+  padding: 20px;
+  font-family: sans-serif;
+}
+
+.timeline-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.task-label-header {
+  width: 150px;
+}
+
+.timeline-days {
+  display: flex;
+  flex-grow: 1;
+  overflow-x: auto;
+}
+
+.day-box {
+  width: 30px;
+  border: 1px solid #ddd;
+  font-size: 12px;
+  text-align: center;
+  padding: 4px 0;
+  background: #f9f9f9;
+}
+
+.gantt-grid {
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid #ccc;
+}
+
+.task-row {
+  display: flex;
+  align-items: center;
+  height: 40px;
+}
+
+.task-label {
+  width: 150px;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.task-bar {
+  height: 24px;
+  background-color: #4f46e5;
+  color: white;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.task-bar:active {
+  opacity: 0.6;
+  cursor: grabbing;
+}
+.task-bar {
+  cursor: grab;
+}
+
+.dependency-line {
+  position: absolute;
+  top: 0;
+  left: 150px; /* match .task-label width */
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
