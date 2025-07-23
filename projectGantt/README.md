@@ -1,12 +1,91 @@
-# React + Vite
+# 📊 React Gantt Chart
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive Gantt chart built using **React**, designed to visualize and manage task timelines, dependencies, and progress. Supports drag-and-drop, task resizing, dependency arrows, and smooth performance with 100+ tasks.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Features
 
-## Expanding the ESLint configuration
+- ✅ Zoom levels: Day / Week / Month views
+- ✅ Scrollable timeline and compact task rows
+- ✅ Drag-and-drop tasks along the timeline
+- ✅ Resizable task bars with 1-day minimum duration
+- ✅ Live task editing modal (name, date, progress)
+- ✅ Dependency arrows with FS, SS, FF types and lag/lead offsets
+- ✅ Auto-scroll to today's date on load
+- ✅ Handles 100+ tasks efficiently
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 📁 Project Structure
+
+```
+
+project-root/
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── GanttChart.jsx
+│   │   ├── EditModal.jsx
+│   │   └── DependencyArrow\.jsx
+│   ├── data/
+│   │   └── tasks.js
+│   ├── styles/
+│   │   ├── gantt.css
+│   │   └── modal.css
+│   └── main.jsx
+├── README.md
+├── package.json
+└── vite.config.js
+
+````
+
+---
+
+## 🛠️ Setup Instructions
+
+### 1. Clone the Repo
+
+```bash
+git clone https://github.com/xkshxt/projectGanttJs.git
+cd gantt-chart-react
+````
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Run the App
+
+```bash
+npm run dev
+```
+
+The app will be available at: `http://localhost:5173`
+
+---
+
+## 🔧 Tech Stack
+
+* React (with hooks)
+* Vite (for fast development)
+* CSS (no external UI libraries)
+
+---
+
+## 📌 Notes
+
+* Timeline zoom and scroll are optimized for smooth use with large task lists.
+* Future enhancements could include:
+
+  * Task groupings or swimlanes
+  * Export to PDF/image
+  * Better visual hierarchy (indentation or color coding)
+
+---
+
+## 📬 Contact
+
+For any questions, reach out at: **\[[akshj0203@gmail.com](mailto:akshj0203@gmail.com)]**
