@@ -7,14 +7,18 @@ function parseDate(str) {
   return new Date(str + "T00:00:00");
 }
 
+function formatDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
 function getGroupDateRange(tasks, groupId) {
   const children = tasks.filter((t) => t.parent === groupId);
   if (children.length === 0) return [null, null];
   let min = parseDate(children[0].start);
   let max = parseDate(children[0].end);
   children.forEach((t) => {
-    const st = parseDate(t.start);
-    const en = parseDate(t.end);
+    const st = parseDate(t.start),
+      en = parseDate(t.end);
     if (st < min) min = st;
     if (en > max) max = en;
   });
@@ -37,20 +41,81 @@ function getVisibleTasks(allTasks, groupExpandedMap) {
   return out;
 }
 
-// ----- Drag + Resize State Logic -----
-const NO_DRAG = null; // { taskId, barType, startPos, originalStartIdx, originalEndIdx }
+function buildChartColumns(tasks, zoom) {
+  const tasksOnly = tasks.filter((t) => !t.isGroup);
+  let min = parseDate(tasksOnly[0].start);
+  let max = parseDate(tasksOnly[0].end);
+  tasksOnly.forEach((t) => {
+    const start = parseDate(t.start);
+    const end = parseDate(t.end);
+    if (start < min) min = start;
+    if (end > max) max = end;
+  });
+  const chartColumns = [];
+
+  if (zoom === "Day") {
+    let d = new Date(min);
+    while (d <= max) {
+      chartColumns.push({
+        date: new Date(d),
+        label: d.toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+        }),
+      });
+      d.setDate(d.getDate() + 1);
+    }
+  } else if (zoom === "Week") {
+    let d = new Date(min);
+    d.setDate(d.getDate() - d.getDay()); // Snap to Sunday
+    while (d <= max) {
+      chartColumns.push({
+        date: new Date(d),
+        label:
+          `Wk ${getWeekNumber(d)}\n` +
+          d.toLocaleDateString("en-US", { month: "short", day: "2-digit" }),
+      });
+      d.setDate(d.getDate() + 7);
+    }
+  } else if (zoom === "Month") {
+    let d = new Date(min.getFullYear(), min.getMonth(), 1);
+    while (d <= max) {
+      chartColumns.push({
+        date: new Date(d),
+        label: d.toLocaleDateString("en-US", {
+          month: "short",
+          year: "2-digit",
+        }),
+      });
+      d.setMonth(d.getMonth() + 1);
+    }
+  }
+  return chartColumns;
+}
+
+function getWeekNumber(date) {
+  const startOfYear = new Date(date.getFullYear(), 0, 1);
+  const diff = Math.floor((date - startOfYear) / (24 * 60 * 60 * 1000));
+  return Math.ceil((diff + startOfYear.getDay() + 1) / 7);
+}
+
+const NO_DRAG = null;
+// Minimum chart area width, adjust as you like:
+const GANTT_MIN_WIDTH = 900;
 
 function App() {
-  // Track expanded/collapsed group state
-  const [groupExpanded, setGroupExpanded] = useState(
-    () =>
-      Object.fromEntries(
-        initialTasksRaw.filter((t) => t.isGroup).map((t) => [t.id, !!t.expanded])
-      )
+  // --- ZOOM STATE ---
+  const [zoom, setZoom] = useState("Day"); // "Day", "Week", "Month"
+  const baseColWidth = zoom === "Day" ? 40 : zoom === "Week" ? 60 : 100;
+
+  // --- GROUP COLLAPSE ---
+  const [groupExpanded, setGroupExpanded] = useState(() =>
+    Object.fromEntries(
+      initialTasksRaw.filter((t) => t.isGroup).map((t) => [t.id, !!t.expanded])
+    )
   );
-  // Now tasks are editable!
+  // TASK data state:
   const [tasks, setTasks] = useState(initialTasksRaw);
-  // For drag/resize gesture
   const [dragInfo, setDragInfo] = useState(NO_DRAG);
 
   const visibleTasks = useMemo(
@@ -58,42 +123,59 @@ function App() {
     [tasks, groupExpanded]
   );
 
-  // Only consider real tasks (skip groups)
-  const { chartDays } = useMemo(() => {
-    const tasksOnly = tasks.filter((t) => !t.isGroup);
-    let min = parseDate(tasksOnly[0].start);
-    let max = parseDate(tasksOnly[0].end);
-    tasksOnly.forEach((t) => {
-      const start = parseDate(t.start);
-      const end = parseDate(t.end);
-      if (start < min) min = start;
-      if (end > max) max = end;
-    });
-    const days = [];
-    let d = new Date(min);
-    while (d <= max) {
-      days.push(new Date(d));
-      d.setDate(d.getDate() + 1);
-    }
-    return { chartDays: days };
-  }, [tasks]);
+  // --- Columns depend on zoom ---
+  const chartColumns = useMemo(
+    () => buildChartColumns(tasks, zoom),
+    [tasks, zoom]
+  );
+  // The "stretch" column width:
+  const chartAreaWidth = Math.max(
+    GANTT_MIN_WIDTH,
+    chartColumns.length * baseColWidth
+  );
+  const colDynamicWidth = chartAreaWidth / chartColumns.length;
 
-  // --- Drag/Resize Events ---
+  // Utility: which column index contains a date (for day/week/month mode)
+  function dateToColIdx(dateStr) {
+    const d = parseDate(dateStr);
+    if (zoom === "Day") {
+      return chartColumns.findIndex(
+        (col) => formatDate(col.date) === formatDate(d)
+      );
+    } else if (zoom === "Week") {
+      for (let i = 0; i < chartColumns.length; ++i) {
+        let colDate = chartColumns[i].date;
+        let nextColDate =
+          i < chartColumns.length - 1
+            ? chartColumns[i + 1].date
+            : new Date(3000, 0, 1);
+        if (d >= colDate && d < nextColDate) return i;
+      }
+      return -1;
+    } else if (zoom === "Month") {
+      for (let i = 0; i < chartColumns.length; ++i) {
+        let colDate = chartColumns[i].date;
+        let nextColDate =
+          i < chartColumns.length - 1
+            ? chartColumns[i + 1].date
+            : new Date(3000, 0, 1);
+        if (d >= colDate && d < nextColDate) return i;
+      }
+      return -1;
+    }
+    return -1;
+  }
+
+  // --- Drag/Resize Events now work in any zoom ---
   function handleBarMouseDown(e, t, row, barType = "move") {
-    // barType = "move" (whole bar), "resize-left", "resize-right"
     e.preventDefault();
     e.stopPropagation();
-    const startIdx = chartDays.findIndex(
-      (d) => d.toISOString().slice(0, 10) === t.start
-    );
-    const endIdx = chartDays.findIndex(
-      (d) => d.toISOString().slice(0, 10) === t.end
-    );
-    const startPos = e.clientX;
+    const startIdx = dateToColIdx(t.start);
+    const endIdx = dateToColIdx(t.end);
     setDragInfo({
       taskId: t.id,
       barType,
-      startPos,
+      startPos: e.clientX,
       originalStartIdx: startIdx,
       originalEndIdx: endIdx,
     });
@@ -102,45 +184,40 @@ function App() {
   function handleMouseMove(e) {
     if (!dragInfo) return;
     const deltaPx = e.clientX - dragInfo.startPos;
-    const deltaDays = Math.round(deltaPx / 40); // 1 col = 40px
+    const deltaUnits = Math.round(deltaPx / colDynamicWidth);
     setTasks((oldTasks) =>
       oldTasks.map((task) => {
         if (task.id !== dragInfo.taskId) return task;
-        let newStart = task.start, newEnd = task.end;
+        let newStart = task.start,
+          newEnd = task.end;
         if (dragInfo.barType === "move") {
-          const newStartIdx = dragInfo.originalStartIdx + deltaDays;
-          const newEndIdx = dragInfo.originalEndIdx + deltaDays;
-          if (newStartIdx >= 0 && newEndIdx < chartDays.length) {
-            newStart = chartDays[newStartIdx].toISOString().slice(0, 10);
-            newEnd = chartDays[newEndIdx].toISOString().slice(0, 10);
+          const newStartIdx = dragInfo.originalStartIdx + deltaUnits;
+          const newEndIdx = dragInfo.originalEndIdx + deltaUnits;
+          if (newStartIdx >= 0 && newEndIdx < chartColumns.length) {
+            newStart = formatDate(chartColumns[newStartIdx].date);
+            newEnd = formatDate(chartColumns[newEndIdx].date);
           }
         } else if (dragInfo.barType === "resize-left") {
-          const newStartIdx = dragInfo.originalStartIdx + deltaDays;
-          if (
-            newStartIdx >= 0 &&
-            newStartIdx <= dragInfo.originalEndIdx
-          ) {
-            newStart = chartDays[newStartIdx].toISOString().slice(0, 10);
+          const newStartIdx = dragInfo.originalStartIdx + deltaUnits;
+          if (newStartIdx >= 0 && newStartIdx <= dragInfo.originalEndIdx) {
+            newStart = formatDate(chartColumns[newStartIdx].date);
           }
         } else if (dragInfo.barType === "resize-right") {
-          const newEndIdx = dragInfo.originalEndIdx + deltaDays;
+          const newEndIdx = dragInfo.originalEndIdx + deltaUnits;
           if (
-            newEndIdx < chartDays.length &&
+            newEndIdx < chartColumns.length &&
             newEndIdx >= dragInfo.originalStartIdx
           ) {
-            newEnd = chartDays[newEndIdx].toISOString().slice(0, 10);
+            newEnd = formatDate(chartColumns[newEndIdx].date);
           }
         }
         return { ...task, start: newStart, end: newEnd };
       })
     );
   }
-
   function handleMouseUp() {
     if (dragInfo) setDragInfo(NO_DRAG);
   }
-
-  // Attach global drag handlers when active
   useEffect(() => {
     if (!dragInfo) return;
     window.addEventListener("mousemove", handleMouseMove);
@@ -151,9 +228,24 @@ function App() {
     };
   });
 
+  // --- UI ---
   return (
+    <>
+    {/* Zoom buttons toolbar */}
+  <div style={{ margin: "20px 0 10px 20px" }}>
+    {["Day", "Week", "Month"].map((z) => (
+      <button
+        key={z}
+        className={`gantt-zoom-btn${zoom === z ? " selected" : ""}`}
+        onClick={() => setZoom(z)}
+      >
+        {z}
+      </button>
+    ))}
+  </div>
     <div className="gantt-container">
-      {/* Sidebar Table */}
+      
+      {/* --- Sidebar Table --- */}
       <div className="gantt-sidebar">
         <table>
           <thead>
@@ -166,13 +258,19 @@ function App() {
           <tbody>
             {visibleTasks.map((t) =>
               t.isGroup ? (
-                <tr key={t.id} style={{ background: "#262a48", fontWeight: 700 }}>
-                  <td colSpan={1} style={{ color: "#be45ea", position: "relative" }}>
+                <tr
+                  key={t.id}
+                  style={{ background: "#262a48", fontWeight: 700 }}
+                >
+                  <td
+                    colSpan={1}
+                    style={{ color: "#be45ea", position: "relative" }}
+                  >
                     <span
                       onClick={() =>
                         setGroupExpanded((g) => ({ ...g, [t.id]: !g[t.id] }))
                       }
-                                            style={{
+                      style={{
                         marginRight: 7,
                         cursor: "pointer",
                         display: "inline-block",
@@ -182,7 +280,6 @@ function App() {
                     </span>
                     {t.name}
                   </td>
-                  {/* Calculate group date range dynamically */}
                   <td>
                     {(() => {
                       const [groupStart] = getGroupDateRange(tasks, t.id);
@@ -211,32 +308,31 @@ function App() {
           </tbody>
         </table>
       </div>
-      {/* Chart */}
+
+      {/* --- Gantt Chart --- */}
       <div className="gantt-chart-area">
         <svg
-          width={chartDays.length * 40}
+          width={chartAreaWidth}
           height={visibleTasks.length * 40 + 40}
-          style={{ background: "#222", borderRadius: "8px" }}
+          style={{ background: "#222", borderRadius: "8px", display: "block" }}
         >
           {/* Date header */}
-          {chartDays.map((day, idx) => (
+          {chartColumns.map((col, idx) => (
             <g key={idx}>
               <text
-                x={idx * 40 + 20}
+                x={idx * colDynamicWidth + colDynamicWidth / 2}
                 y={24}
                 textAnchor="middle"
                 fontSize="12"
                 fill="#aaa"
+                style={{ whiteSpace: "pre" }}
               >
-                {day.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "2-digit",
-                })}
+                {col.label}
               </text>
               <line
-                x1={idx * 40 + 40}
+                x1={idx * colDynamicWidth + colDynamicWidth}
                 y1={0}
-                x2={idx * 40 + 40}
+                x2={idx * colDynamicWidth + colDynamicWidth}
                 y2={visibleTasks.length * 40 + 32}
                 stroke="#333"
               />
@@ -249,7 +345,7 @@ function App() {
               key={task.id + "_bg"}
               x={0}
               y={row * 40 + 32}
-              width={chartDays.length * 40}
+              width={chartAreaWidth}
               height={36}
               className={
                 task.isGroup
@@ -266,29 +362,21 @@ function App() {
             // Group: draw bar based on min/max of child tasks
             if (t.isGroup) {
               const [groupStart, groupEnd] = getGroupDateRange(tasks, t.id);
-              if (!groupStart || !groupEnd) return null; // Only draw if group has children
-              const startIdx = chartDays.findIndex(
-                (d) =>
-                  d.toISOString().slice(0, 10) ===
-                  groupStart.toISOString().slice(0, 10)
-              );
-              const endIdx = chartDays.findIndex(
-                (d) =>
-                  d.toISOString().slice(0, 10) ===
-                  groupEnd.toISOString().slice(0, 10)
-              );
+              if (!groupStart || !groupEnd) return null;
+              const startIdx = dateToColIdx(formatDate(groupStart));
+              const endIdx = dateToColIdx(formatDate(groupEnd));
               return (
                 <g key={t.id}>
                   <rect
-                    x={startIdx * 40}
+                    x={startIdx * colDynamicWidth}
                     y={row * 40 + 40}
-                    width={(endIdx - startIdx + 1) * 40}
+                    width={(endIdx - startIdx + 1) * colDynamicWidth}
                     height={24}
                     rx={6}
                     className="gantt-task-bar-group"
                   />
                   <text
-                    x={startIdx * 40 + 10}
+                    x={startIdx * colDynamicWidth + 10}
                     y={row * 40 + 56}
                     fontSize="13"
                     fill="#fff"
@@ -301,18 +389,14 @@ function App() {
             }
 
             // Child task bar (draggable and resizable)
-            const startIdx = chartDays.findIndex(
-              (d) => d.toISOString().slice(0, 10) === t.start
-            );
-            const endIdx = chartDays.findIndex(
-              (d) => d.toISOString().slice(0, 10) === t.end
-            );
+            const startIdx = dateToColIdx(t.start);
+            const endIdx = dateToColIdx(t.end);
             return (
               <g key={t.id}>
                 <rect
-                  x={startIdx * 40}
+                  x={startIdx * colDynamicWidth}
                   y={row * 40 + 40}
-                  width={(endIdx - startIdx + 1) * 40}
+                  width={(endIdx - startIdx + 1) * colDynamicWidth}
                   height={24}
                   rx={6}
                   className="gantt-task-bar"
@@ -321,26 +405,30 @@ function App() {
                 />
                 {/* left resize handle */}
                 <rect
-                  x={startIdx * 40 - 4}
+                  x={startIdx * colDynamicWidth - 4}
                   y={row * 40 + 42}
                   width={8}
                   height={20}
                   fill="#fff"
                   style={{ cursor: "ew-resize" }}
-                  onMouseDown={(e) => handleBarMouseDown(e, t, row, "resize-left")}
+                  onMouseDown={(e) =>
+                    handleBarMouseDown(e, t, row, "resize-left")
+                  }
                 />
                 {/* right resize handle */}
                 <rect
-                  x={(endIdx + 1) * 40 - 4}
+                  x={(endIdx + 1) * colDynamicWidth - 4}
                   y={row * 40 + 42}
                   width={8}
                   height={20}
                   fill="#fff"
                   style={{ cursor: "ew-resize" }}
-                  onMouseDown={(e) => handleBarMouseDown(e, t, row, "resize-right")}
+                  onMouseDown={(e) =>
+                    handleBarMouseDown(e, t, row, "resize-right")
+                  }
                 />
                 <text
-                  x={startIdx * 40 + 10}
+                  x={startIdx * colDynamicWidth + 10}
                   y={row * 40 + 56}
                   fontSize="13"
                   fill="#fff"
@@ -356,7 +444,9 @@ function App() {
           {visibleTasks.flatMap((task, targetRow) =>
             (task.dependencies || []).map((dep, i) => {
               // Only show lines if both source & target are visible (and not groups)
-              const sourceIdx = visibleTasks.findIndex((t) => t.id === dep.taskId);
+              const sourceIdx = visibleTasks.findIndex(
+                (t) => t.id === dep.taskId
+              );
               if (
                 sourceIdx === -1 ||
                 task.isGroup ||
@@ -364,15 +454,11 @@ function App() {
               )
                 return null;
               const getPos = (task, row) => {
-                const startIdx = chartDays.findIndex(
-                  (d) => d.toISOString().slice(0, 10) === task.start
-                );
-                const endIdx = chartDays.findIndex(
-                  (d) => d.toISOString().slice(0, 10) === task.end
-                );
+                const startIdx = dateToColIdx(task.start);
+                const endIdx = dateToColIdx(task.end);
                 return {
-                  startX: startIdx * 40,
-                  endX: (endIdx + 1) * 40,
+                  startX: startIdx * colDynamicWidth,
+                  endX: (endIdx + 1) * colDynamicWidth,
                   y: row * 40 + 40 + 12,
                 };
               };
@@ -440,6 +526,7 @@ function App() {
         </svg>
       </div>
     </div>
+    </>
   );
 }
 
