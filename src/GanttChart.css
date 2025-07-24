@@ -1,7 +1,7 @@
 .gantt-container {
   display: flex;
   height: 100vh;
-  background: #181c26; /* dark bg */
+  background: #181c26;
   color: #eee;
   font-family: 'Segoe UI', sans-serif;
 }
@@ -24,6 +24,9 @@
   padding: 4px 6px;
   border-bottom: 1px solid #222842;
   text-align: left;
+  height: 40px;              
+  vertical-align: middle;
+  box-sizing: border-box;    
 }
 
 .gantt-sidebar th {
@@ -36,4 +39,17 @@
   position: relative;
   overflow: auto;
   padding: 1rem;
+  background: #181c26;
 }
+
+/* New: Style for dark horizontal row bands */
+.gantt-row-bg1 { fill: #1d2033; }
+.gantt-row-bg2 { fill: #23263a; }
+/* New: Parent Group Row BG */
+.gantt-row-parent { fill: #262a48 !important; opacity: 0.9; }
+/* Task bar colors */
+.gantt-task-bar-group { fill: #be45ea; stroke: #9d2eb3; }
+.gantt-task-bar { fill: #54a9ff; stroke: #268de3; }
+.gantt-task-bar-complete { fill: #6fc71f; stroke: #438b04; }
+/* Arrows */
+.gantt-arrow { stroke: #eed265; stroke-width: 2.5; }
