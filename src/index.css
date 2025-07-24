@@ -66,3 +66,23 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+.gantt-sidebar table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.gantt-sidebar th,
+.gantt-sidebar td {
+  padding: 4px 6px;
+  border-bottom: 1px solid #222842;
+  text-align: left;
+  height: 40px;              /* <-- Match your SVG row height! */
+  vertical-align: middle;
+  box-sizing: border-box;    /* Ensure padding/height calculation is precise */
+}
+
+.gantt-sidebar th {
+  background: #23263b;
+  font-weight: 600;
+}

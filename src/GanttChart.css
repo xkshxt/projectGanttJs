@@ -1,0 +1,39 @@
+.gantt-container {
+  display: flex;
+  height: 100vh;
+  background: #181c26; /* dark bg */
+  color: #eee;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.gantt-sidebar {
+  min-width: 320px;
+  background: #181c26;
+  border-right: 1px solid #23263b;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.gantt-sidebar table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.gantt-sidebar th,
+.gantt-sidebar td {
+  padding: 4px 6px;
+  border-bottom: 1px solid #222842;
+  text-align: left;
+}
+
+.gantt-sidebar th {
+  background: #23263b;
+  font-weight: 600;
+}
+
+.gantt-chart-area {
+  flex: 1;
+  position: relative;
+  overflow: auto;
+  padding: 1rem;
+}
