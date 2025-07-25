@@ -1,3 +1,5 @@
+---
+
 # ProjectGanttJs
 
 A modern, interactive, React-based Gantt Chart component — supporting Microsoft Project–style dependencies (FS/SS/FF), lead/lag offsets, groupings, zoom, drag, resize, and live editing.
@@ -9,12 +11,16 @@ A modern, interactive, React-based Gantt Chart component — supporting Microsof
 ## ✨ Features
 
 - 📅 Zoomable timeline (Day/Week/Month)
-- 🟪 Task bars & multi-level groups (auto color-coded)
-- 🔄 Drag, resize, and schedule tasks visually
-- 🎯 Dependency arrows (FS/SS/FF + lag/lead) following task bars in real time
-- 🖱️ Click any task bar to pop up a modal for instant editing
-- ⚡ Smooth and responsive even for large projects
-- 🎨 Fully themeable and desktop-friendly
+- 🟪 Task bars with multi-level, color-coded groups (Planning, Creative, SEO, Development, Ad Campaigns, Launch, Support)
+- 🔄 Drag and resize to schedule tasks visually
+- 🔀 Fully editable, complex dependencies (FS/SS/FF, with lead/lag), visual arrows update live as you drag/resize
+- 🖱️ Click task bars to open a modal for fast editing
+- ⚡ Smooth and responsive for up to 150+ tasks in a realistic dataset
+- 📏 Sticky always-visible horizontal scrollbar for timeline navigation
+- 🧭 **Synchronized vertical scrolling**—scrolling the sidebar or chart keeps rows locked/aligned
+- 🎨 Fully themeable (dark mode by default), desktop-optimized
+
+---
 
 ## 🚀 Getting Started
 
@@ -30,54 +36,72 @@ A modern, interactive, React-based Gantt Chart component — supporting Microsof
     ```
     The app will open in your browser at [http://localhost:5173/](http://localhost:5173/)
 
-3. **Try editing tasks, resizing bars, moving tasks, and exploring zoom!**
+3. **Explore the demo:**
+    - Try zooming (Day/Week/Month), dragging and resizing bars, editing tasks, and watching dependency arrows update in real time.
+    - 150-task dataset included by default for performance testing and demo realism.
+
+---
 
 ## 📁 Structure
 
-- `src/App.jsx`: Main Gantt component (UI, logic, and modal)
-- `src/tasksData.js`: Example/mock project tasks
-- `src/index.css`: Main styles (sidebar, Gantt, theme, drag, zoom)
+- `src/App.jsx`: **Main Gantt component**—UI, interactivity, modal, scroll sync
+- `src/tasksData.js`: **Sample project**—150 tasks across 6 realistic color-coded groups, with FS/SS/FF dependencies, lags/leads
+- `src/index.css`: Main styles for theme, group colors, scrollbars, chart/table layout
+
+---
 
 ## 🎨 Customizing
 
-- To change bar colors for groups, edit the `GROUP_COLORS` mapping in `App.jsx`.
-- Add your own tasks to `src/tasksData.js`, following the example structure for groups and dependencies.
-- All taskbar text is set to white for maximum readability; no matter the bar color.
+- To change group colors, edit the `GROUP_COLORS` object in `App.jsx`.
+- Add/edit tasks or groups in `src/tasksData.js`. Each task can belong to a group, and use multiple dependency types and lags/leads.
+- Sidebar and chart are always in sync for pro-grade navigation.
+- Sticky horizontal scroller ensures easy navigation of wide/long projects.
 
-## 🖥️ Responsiveness
+---
 
-- Designed primarily for desktop and wide-screen browsers, just like pro project management tools.
-- The Gantt area stretches to fill the browser window, and the sidebar remains fixed.
-- You can scroll horizontally for long periods/projects, and vertically for many tasks.
-- For tablet/mobile adaptation, additional responsive CSS and touch gesture support would be needed.
+## 🖥️ Responsiveness & Experience
+
+- Designed for **desktop/wide screens** (like MS Project and pro PM tools)
+- The sidebar remains fixed; vertical and horizontal scroll behave just like commercial Gantt apps
+- Large projects (100+ tasks) remain smooth thanks to efficient SVG and React state logic
+
+---
 
 ## 🛠️ Technologies Used
 
 - [React](https://reactjs.org/)
-- SVG for Gantt chart visualization
-- Plain CSS (no external dependencies required for visual/core logic)
-- Vite for dev server and build
+- SVG for Gantt visualization and arrows
+- Plain CSS (no external visual libraries)
+- Vite for dev/build
+
+---
 
 ## 📦 Building For Production
 
-To build for production (static files in `dist/`):
-
+To build for production:
 ```bash
 npm run build
+```
 To preview the production build locally:
-
-
+```bash
 npm run preview
+```
 
+---
 
-🧑‍💻 Contributing
+## 🧑‍💻 Contributing
+
 PRs are welcome! Open an issue for feedback, bugs, or features.
 
 - Fork the repo
-- Make your feature changes (preferably in a topic branch)
-- Submit a Pull Request with a clear explanation
+- Make your changes (feature branch preferred)
+- Submit a Pull Request with a clear description
 
+---
 
-📚 License
-MIT License
+## 📚 License
+
+MIT License  
 © xkshxt/projectGanttJs
+
+---
