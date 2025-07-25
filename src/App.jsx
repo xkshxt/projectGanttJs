@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import "./index.css";
 import initialTasksRaw from "./tasksData";
 
@@ -108,6 +108,9 @@ function getWeekNumber(date) {
 const NO_DRAG = null;
 
 function App() {
+    const sidebarRef = useRef(null);
+  const chartRef = useRef(null);
+  const stickyScrollRef = useRef(null); // already exists for sticky horizontal sync
   // --- ZOOM STATE ---
   const [zoom, setZoom] = useState("Day");
   // Dynamic width per time column
@@ -263,6 +266,28 @@ function App() {
     closeEditModal();
   }
 
+
+// Sync scroll positions between chart and sticky scroller
+function handleStickyScroll(e) {
+  if (chartRef.current) {
+    chartRef.current.scrollLeft = e.target.scrollLeft;
+  }
+}
+  // --- VERTICAL SCROLL SYNC (BOTH WAYS) ---
+  function handleSidebarScroll(e) {
+    if (chartRef.current) {
+      chartRef.current.scrollTop = e.target.scrollTop;
+    }
+  }
+  function handleChartScroll(e) {
+    if (sidebarRef.current) {
+      sidebarRef.current.scrollTop = e.target.scrollTop;
+    }
+    // If you already handle stickyScrollRef here, keep your horizontal sync too:
+    if (stickyScrollRef.current) {
+      stickyScrollRef.current.scrollLeft = e.target.scrollLeft;
+    }
+  }
   // --- UI ---
   return (
     <>
@@ -280,7 +305,12 @@ function App() {
       </div>
       <div className="gantt-container">
         {/* --- Sidebar Table --- */}
-        <div className="gantt-sidebar">
+        <div
+  className="gantt-sidebar"
+  ref={sidebarRef}
+  onScroll={handleSidebarScroll}
+  style={{ overflowY: "auto", maxHeight: "100vh", position: "relative" }}
+>
           <table>
             <thead>
               <tr>
@@ -378,7 +408,19 @@ function App() {
           </table>
         </div>
         {/* --- Gantt Chart --- */}
-        <div className="gantt-chart-area">
+        <div style={{position: "relative", flex: 1, display: "flex", flexDirection: "column"}}>
+        <div
+  className="gantt-chart-area"
+  ref={chartRef}
+  onScroll={handleChartScroll}
+  style={{
+    flex: 1,
+    overflowX: "auto",
+    overflowY: "auto",
+    position: "relative",
+    maxHeight: "100vh"
+  }}
+>
           <svg
             width="100%"
             height={visibleTasks.length * 40 + 40}
@@ -832,6 +874,26 @@ function App() {
             </div>
           )}
         </div>
+        {/* Sticky horizontal scroller */}
+  <div
+    ref={stickyScrollRef}
+    style={{
+      height: 18,
+      overflowX: "auto",
+      overflowY: "hidden",
+      background: "#21253b",
+      borderTop: "1px solid #272a43",
+      position: "sticky",
+      bottom: 0,
+      width: "100%",
+      zIndex: 22,
+    }}
+    onScroll={handleStickyScroll}
+  >
+    {/* "Fake" spacer div to give scrollbar the same width as chart */}
+    <div style={{ width: ganttChartPixelWidth, height: 1 }}></div>
+  </div>
+</div>
       </div>
     </>
   );

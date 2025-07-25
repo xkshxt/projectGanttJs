@@ -163,3 +163,11 @@ svg text {
   fill: #fff !important;
   paint-order: stroke;
 }
+
+.gantt-sidebar {
+  scrollbar-width: none;    /* Firefox */
+}
+.gantt-sidebar::-webkit-scrollbar {
+  width: 0px;               /* Chrome/Safari */
+  background: transparent;
+}
